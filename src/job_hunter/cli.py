@@ -68,7 +68,8 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     store = _store(settings)
     res = daily(config, sources, store, analyzer, settings.job_hunter_data_dir / "runs",
-                profile.analysis.max_jobs_per_run)
+                args.max_analyses if args.max_analyses is not None
+                else profile.analysis.max_jobs_per_run)
     ex = res.extraction
     print(f"Collected {sum(ex.per_source.values())}, kept {len(ex.kept)} "
           f"({len(ex.rejected)} filtered out), {res.new_jobs} new, "
@@ -182,6 +183,7 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--sources", help="comma list: email,adzuna,employers,france_travail,rss")
         p.add_argument("--eml-dir", help="read alert emails from .eml files instead of IMAP")
         p.add_argument("--no-analysis", action="store_true")
+        p.add_argument("--max-analyses", type=int, help="override the cost cap for this run")
         p.set_defaults(func=func)
 
     p = sub.add_parser("capture", help="attach a job description you copied")
