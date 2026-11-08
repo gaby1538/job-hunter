@@ -11,7 +11,8 @@ from email import policy
 from email.message import Message
 from pathlib import Path
 
-from job_hunter.config import EmailConfig, SearchCriteria
+from job_hunter.capture import CaptureItem, is_capture_email, parse_capture_email
+from job_hunter.config import CaptureConfig, EmailConfig, SearchCriteria
 from job_hunter.models import JobPosting
 from job_hunter.settings import Settings
 from job_hunter.sources.base import SourceError
@@ -58,17 +59,32 @@ def iter_imap(settings: Settings, cfg: EmailConfig) -> Iterator[Message]:
 class EmailAlertSource:
     name = "email"
 
-    def __init__(self, cfg: EmailConfig, settings: Settings, eml_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        cfg: EmailConfig,
+        settings: Settings,
+        eml_dir: Path | None = None,
+        capture_cfg: CaptureConfig | None = None,
+    ) -> None:
         self.cfg = cfg
         self.settings = settings
         self.eml_dir = eml_dir
+        self.capture_cfg = capture_cfg or CaptureConfig()
+        self.captures: list[CaptureItem] = []  # descriptions you emailed yourself
 
     def fetch(self, criteria: SearchCriteria) -> list[JobPosting]:
         messages = iter_eml_dir(self.eml_dir) if self.eml_dir else iter_imap(self.settings, self.cfg)
         jobs: list[JobPosting] = []
         seen = unknown = 0
+        senders = self.settings.capture_sender_list
+        self.captures = []
         for msg in messages:
             seen += 1
+            if is_capture_email(msg, self.capture_cfg, senders):
+                item = parse_capture_email(msg, self.capture_cfg)
+                if item is not None:
+                    self.captures.append(item)
+                continue
             if identify_site(msg, self.cfg) is None:
                 unknown += 1
                 continue
@@ -83,5 +99,8 @@ class EmailAlertSource:
                     msg.get("From"),
                 )
             jobs.extend(parsed)
-        logger.info("email: %d messages, %d from unknown senders, %d jobs", seen, unknown, len(jobs))
+        logger.info(
+            "email: %d messages, %d from unknown senders, %d jobs, %d captured descriptions",
+            seen, unknown, len(jobs), len(self.captures),
+        )
         return jobs

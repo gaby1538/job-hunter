@@ -1,0 +1,73 @@
+# ---------------------------------------------------------------------------
+# Your professional profile. Claude compares every job against it.
+# Everything here is a parameter: edit freely.
+# ---------------------------------------------------------------------------
+
+summary: >
+  Senior finance risk professional, 6 years of experience in market, liquidity and
+  counterparty risk, XVA and quantitative modelling. Strong Python and SQL.
+
+years_of_experience: 6
+
+skills:
+  # name: level (expert | strong | working)
+  Market risk: expert
+  Liquidity risk: strong
+  Counterparty risk: strong
+  XVA (CVA/DVA/FVA): strong
+  Quantitative modelling: expert
+  VaR: expert
+  Expected Shortfall: expert
+  Monte Carlo simulation: expert
+  Stochastic calculus: strong
+  Python: expert
+  SQL: strong
+
+target_roles:
+  - Quantitative Risk Analyst
+  - Market Risk Analyst
+  - Risk Modelling Specialist
+  - Counterparty Risk Analyst
+  - Liquidity Risk Specialist
+  - Risk Data Scientist
+
+# Roles close enough to be worth a look
+adjacent_roles:
+  - Model Validation (risk models)
+  - Credit Risk Modelling
+  - Quant Analyst (pricing)
+  - Risk Consultant (technical)
+
+contracts: [permanent, freelance]
+
+location:
+  base: Marseille, France
+  max_onsite_days_per_month: 2
+
+preferences:
+  prioritize: Technical modelling work
+  avoid: Pure PMO and project coordination roles
+
+# ---------------------------------------------------------------------------
+# Scoring (points out of 100). See README "How the score works".
+# ---------------------------------------------------------------------------
+scoring:
+  weights:
+    role_fit: 25          # target role 100%, adjacent 50%, off-target 0%
+    requirements: 30      # share of the ad's requirements your profile covers
+    modelling_depth: 20   # high 100%, medium 60%, low 0%, unknown 40%
+    remote: 15            # fits max onsite days 100%, unknown 40%, too many 0%
+    contract: 5           # wanted 100%, unknown 50%, other 0%
+    seniority: 5          # required years within range 100%, unknown 50%
+  coordination_heavy_penalty: 25   # subtracted when the role is mostly PMO/coordination
+  verdict:
+    apply_from: 70
+    consider_from: 50
+    max_missing_must_haves_to_apply: 1
+    onsite_limit_is_dealbreaker: true   # more onsite days than your maximum -> at best "consider"
+
+# Claude settings
+analysis:
+  model: claude-sonnet-5-5      # a few cents per job; claude-haiku-5-5 is cheaper
+  max_tokens: 4000
+  max_jobs_per_run: 40          # cost cap; the rest waits for the next run

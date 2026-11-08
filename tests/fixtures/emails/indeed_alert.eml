@@ -6,9 +6,9 @@ Date: Sun, 08 Nov 2026 16:45:21 +0000
 Message-ID: <indeed_alert@example.com>
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============2711029875048307939=="
+ boundary="===============9059954257177740823=="
 
---===============2711029875048307939==
+--===============9059954257177740823==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 
@@ -36,11 +36,11 @@ Si le salaire n'est pas mentionné dans une offre d'emploi, il sera estimé.
 Gérer les alertes Emploi: https://subscriptions.indeed.com?token=TOKEN
 Se désabonner de cette alerte Emploi: https://subscriptions.indeed.com/alerts/cancel?token=TOKEN
 
---===============2711029875048307939==
+--===============9059954257177740823==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
 
 <html><body><p>HTML version - the text part is used for Indeed.</p></body></html>
 
---===============2711029875048307939==--
+--===============9059954257177740823==--

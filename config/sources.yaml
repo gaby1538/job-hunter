@@ -152,6 +152,29 @@ email:
       subject_patterns: ['offre|job|poste']
       job_url_patterns: ['welcometothejungle\.com/.*/jobs/']
 
+# ---------------------------------------------------------------------------
+# Descriptions you capture yourself: copy the ad's text from a page you are
+# reading, email it to the alert inbox with a subject starting "JD", the link
+# on the first line. The sender must be listed in CAPTURE_SENDERS (.env).
+# ---------------------------------------------------------------------------
+capture:
+  enabled: true
+  subject_prefix: "JD"
+  min_chars: 200
+
+# ---------------------------------------------------------------------------
+# Employer watchlist: full descriptions from employers' public hiring APIs.
+# ats: greenhouse | lever | ashby. board: the name in their careers page URL
+# (boards.greenhouse.io/<board>, jobs.lever.co/<board>, jobs.ashbyhq.com/<board>).
+# All of the employer's jobs are fetched; search.yaml filters keep the relevant ones.
+# ---------------------------------------------------------------------------
+employers:
+  enabled: false
+  companies: []
+  # - name: Example Fund
+  #   ats: greenhouse
+  #   board: examplefund
+
 adzuna:
   enabled: true
   base_url: "https://api.adzuna.com/v1/api/jobs"

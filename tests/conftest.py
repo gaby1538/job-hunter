@@ -25,6 +25,7 @@ def settings() -> Settings:
         adzuna_app_key=SecretStr("test-key"),
         france_travail_client_id="ft-id",
         france_travail_client_secret=SecretStr("ft-secret"),
+        capture_senders="me@example.com",
     )
 
 

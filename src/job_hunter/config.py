@@ -125,8 +125,31 @@ class RssConfig(BaseModel):
     feeds: list[RssFeed] = Field(default_factory=list)
 
 
+class CaptureConfig(BaseModel):
+    """Descriptions you copy yourself and email to the alert inbox."""
+
+    enabled: bool = True
+    subject_prefix: str = "JD"
+    min_chars: int = Field(default=200, ge=1)
+
+
+class Employer(BaseModel):
+    name: str
+    ats: Literal["greenhouse", "lever", "ashby"]
+    board: str = Field(description="Board token / site name used in the ATS public URL")
+
+
+class EmployersConfig(BaseModel):
+    """Employers' own public job APIs: full descriptions, published for reuse."""
+
+    enabled: bool = False
+    companies: list[Employer] = Field(default_factory=list)
+
+
 class SourcesConfig(BaseModel):
     email: EmailConfig = Field(default_factory=EmailConfig)
+    capture: CaptureConfig = Field(default_factory=CaptureConfig)
+    employers: EmployersConfig = Field(default_factory=EmployersConfig)
     adzuna: AdzunaConfig = Field(default_factory=AdzunaConfig)
     france_travail: FranceTravailConfig | None = None
     rss: RssConfig = Field(default_factory=RssConfig)

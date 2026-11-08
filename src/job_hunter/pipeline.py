@@ -1,4 +1,4 @@
-"""Extraction pipeline: fetch every enabled source -> normalize -> filter -> dedupe -> export."""
+"""Pipeline: fetch sources -> normalize -> filter -> dedupe -> store -> captures -> analyse -> report."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ from job_hunter.settings import Settings
 from job_hunter.sources.adzuna import AdzunaSource
 from job_hunter.sources.base import Source
 from job_hunter.sources.email_alerts import EmailAlertSource
+from job_hunter.sources.employers import EmployerSource
 from job_hunter.sources.france_travail import FranceTravailSource
 from job_hunter.sources.rss import RssSource
 
@@ -45,8 +46,9 @@ def build_sources(
 ) -> list[Source]:
     s = config.sources
     candidates: list[tuple[bool, Source]] = [
-        (s.email.enabled, EmailAlertSource(s.email, settings, eml_dir)),
+        (s.email.enabled, EmailAlertSource(s.email, settings, eml_dir, s.capture)),
         (s.adzuna.enabled, AdzunaSource(s.adzuna, settings)),
+        (s.employers.enabled, EmployerSource(s.employers)),
         (s.rss.enabled, RssSource(s.rss)),
     ]
     if s.france_travail is not None:
@@ -142,3 +144,43 @@ def export(result: RunResult, out_dir: Path) -> Path:
     }
     (run_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return run_dir
+
+
+# ---------------------------------------------------------------- daily run
+
+@dataclass
+class DailyResult:
+    extraction: RunResult
+    new_jobs: int
+    captures_applied: int
+    analysis: Any  # AnalysisRun | None
+    shortlist: Path | None
+
+
+def daily(
+    config: AppConfig,
+    sources: list[Source],
+    store: Any,      # JobStore
+    analyzer: Any,   # Analyzer | None (None = skip analysis, e.g. no API key)
+    out_dir: Path,
+    analysis_limit: int,
+    now: datetime | None = None,
+) -> DailyResult:
+    from job_hunter.analysis.report import write_reports
+    from job_hunter.capture import apply_capture
+
+    result = run(config, sources, now=now)
+    new_jobs = sum(1 for job in result.kept if store.upsert(job)[1])
+
+    captures = 0
+    for src in sources:
+        for item in getattr(src, "captures", []):
+            apply_capture(store, item, config.sources.email)
+            captures += 1
+
+    analysis = analyzer.analyse_pending(store, analysis_limit) if analyzer else None
+    store.save()
+    run_dir = export(result, out_dir)
+    shortlist, _ = write_reports(store, run_dir, result.started_at)
+    logger.info("new jobs=%d captures=%d", new_jobs, captures)
+    return DailyResult(result, new_jobs, captures, analysis, shortlist)

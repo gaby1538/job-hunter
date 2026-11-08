@@ -187,6 +187,32 @@ MALT_HTML = """<html><head><style>.heading { font-size: 32px; }</style></head><b
 </tbody></table>
 </body></html>"""
 
+# ----------------------------------------------------------------- capture (you -> yourself)
+CAPTURE_TEXT = f"""https://www.linkedin.com/comm/jobs/view/4486648624/{LI_TRACK}
+
+Consultant risque de crédit - Wise Associates - Paris
+
+Description du poste
+Nous recherchons un consultant senior pour accompagner une banque de financement
+et d'investissement sur ses modèles de risque de contrepartie et de XVA.
+
+Missions
+- Développer et maintenir les modèles de calcul de l'exposition future (PFE, EPE)
+  par simulation Monte Carlo.
+- Implémenter les ajustements CVA et FVA en Python.
+- Documenter les modèles pour la validation interne.
+
+Profil recherché
+- Au moins 5 ans d'expérience en modélisation des risques de marché ou de contrepartie.
+- Maîtrise de Python et SQL indispensable.
+- Connaissance de la réglementation SA-CCR appréciée.
+- Anglais courant.
+
+Conditions
+CDI. Télétravail : 2 jours par semaine, 3 jours sur site à Paris.
+"""
+
+
 # ----------------------------------------------------------------- not alerts
 INMAIL_TEXT = "Bonjour, je vous contacte au sujet d'un poste. https://www.linkedin.com/comm/jobs/view/123/"
 
@@ -210,6 +236,8 @@ def main() -> None:
     save("malt_opportunity", '"Malt [no reply]" <noreply@malt.com>',
          "Nouvelle opportunité avec CLIENT EXEMPLE", "Tue, 27 Oct 2026 07:13:59 +0000",
          html=MALT_HTML)
+    save("capture_jd", ME, "JD: Consultant risque de crédit", "Sun, 08 Nov 2026 18:00:00 +0000",
+         text=CAPTURE_TEXT)
     save("malt_webinar", "Malt Community <community-fr@malt.com>",
          "Webinaire Premiers pas sur Malt", "Tue, 03 Nov 2026 09:30:30 +0000",
          html="<html><body><a href='https://www.malt.fr/webinar'>S'inscrire</a></body></html>")
