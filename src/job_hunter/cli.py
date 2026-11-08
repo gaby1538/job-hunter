@@ -20,9 +20,10 @@ from email import policy
 from pathlib import Path
 
 from job_hunter.analysis.analyzer import Analyzer
-from job_hunter.analysis.report import write_reports
+from job_hunter.analysis.report import ranked, write_reports
 from job_hunter.capture import CaptureItem, apply_capture
 from job_hunter.config import ConfigError, load_config
+from job_hunter.notify import NotifyError, send_report
 from job_hunter.pipeline import build_sources, daily
 from job_hunter.profile import load_profile
 from job_hunter.settings import Settings, get_settings
@@ -30,10 +31,12 @@ from job_hunter.sources.email_parser import identify_site, parse_alert_email
 from job_hunter.store import JobStore
 
 
-def _setup_logging(level: str) -> None:
+def _setup_logging(level: str, log_file: str | None = None) -> None:
     logging.basicConfig(
         level=getattr(logging, level.upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        filename=log_file,
+        force=log_file is not None,
     )
 
 
@@ -81,6 +84,21 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"Shortlist: {res.shortlist}")
     for name, err in ex.errors.items():
         print(f"  ! {name}: {err}", file=sys.stderr)
+
+    if args.email_report and res.shortlist is not None:
+        verdicts = [r.score["verdict"] for r in ranked(store) if r.score]
+        today = ex.started_at.strftime("%d/%m/%Y")
+        subject = (f"Job Hunter {today}: {verdicts.count('apply')} to apply, "
+                   f"{verdicts.count('consider')} to consider")
+        attachments = [res.shortlist.with_name("analysis.csv")]
+        if args.log_file:
+            attachments.append(Path(args.log_file))
+        try:
+            send_report(settings, subject, res.shortlist.read_text(encoding="utf-8"), attachments)
+            print("Report emailed.")
+        except NotifyError as exc:
+            print(f"  ! report: {exc}", file=sys.stderr)
+            return 3
     return 0 if len(ex.errors) < len(sources) else 2
 
 
@@ -184,6 +202,9 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--eml-dir", help="read alert emails from .eml files instead of IMAP")
         p.add_argument("--no-analysis", action="store_true")
         p.add_argument("--max-analyses", type=int, help="override the cost cap for this run")
+        p.add_argument("--email-report", action="store_true",
+                       help="email the shortlist to yourself (REPORT_TO, default IMAP_USER)")
+        p.add_argument("--log-file", help="write logs to this file instead of the console")
         p.set_defaults(func=func)
 
     p = sub.add_parser("capture", help="attach a job description you copied")
@@ -203,7 +224,7 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=cmd_check_config)
 
     args = parser.parse_args(argv)
-    _setup_logging(get_settings().log_level)
+    _setup_logging(get_settings().log_level, getattr(args, "log_file", None))
     try:
         return int(args.func(args))
     except ConfigError as exc:

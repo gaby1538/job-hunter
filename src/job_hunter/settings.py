@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     imap_user: str | None = None
     imap_password: SecretStr | None = None
 
+    # Report email (defaults: Gmail SMTP, your IMAP credentials, sent to yourself)
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 465
+    smtp_user: str | None = None
+    smtp_password: SecretStr | None = None
+    report_to: str | None = None
+
     adzuna_app_id: str | None = None
     adzuna_app_key: SecretStr | None = None
 

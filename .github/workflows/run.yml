@@ -1,0 +1,92 @@
+# Run Job Hunter in the cloud, on demand (GitHub app: Actions > Run Job Hunter > Run workflow).
+#
+# This repository is PUBLIC, so the workflow never publishes personal data:
+#   sample - runs on the anonymized sample emails in tests/fixtures; the shortlist is
+#            shown on the run's Summary page (only sample data, your public profile).
+#   inbox  - reads your real alerts; the shortlist, table and log are EMAILED to you.
+#            The public log shows only counts. Nothing is uploaded.
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   ANTHROPIC_API_KEY                          analysis
+#   IMAP_USER, IMAP_PASSWORD                   inbox mode (Gmail app password; also used to send the email)
+#   CAPTURE_SENDERS                            your address, for "JD" capture emails
+#   REPORT_TO                                  optional, defaults to IMAP_USER
+#   ADZUNA_APP_ID, ADZUNA_APP_KEY              optional
+
+name: Run Job Hunter
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "sample = demo on sample emails (public summary); inbox = your alerts (emailed)"
+        type: choice
+        options: [sample, inbox]
+        default: sample
+      max_analyses:
+        description: "Max jobs analysed by Claude (cost cap)"
+        type: string
+        default: "10"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: job-hunter-run
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MODE: ${{ inputs.mode }}
+      MAX_ANALYSES: ${{ inputs.max_analyses }}
+      JOB_HUNTER_DATA_DIR: ${{ runner.temp }}/data
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q -e .
+
+      - name: Check inputs
+        run: |
+          case "$MAX_ANALYSES" in ''|*[!0-9]*) echo "max_analyses must be a number"; exit 1;; esac
+
+      - name: Sample run (anonymized sample emails)
+        if: inputs.mode == 'sample'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CAPTURE_SENDERS: me@example.com   # sender of the sample capture email
+        run: |
+          python -m job_hunter run --sources email --eml-dir tests/fixtures/emails \
+            --max-analyses "$MAX_ANALYSES"
+          f=$(ls -t "$JOB_HUNTER_DATA_DIR"/runs/*/shortlist.md | head -1)
+          cat "$f" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Inbox run (results emailed, nothing published)
+        if: inputs.mode == 'inbox'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          IMAP_USER: ${{ secrets.IMAP_USER }}
+          IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
+          CAPTURE_SENDERS: ${{ secrets.CAPTURE_SENDERS }}
+          REPORT_TO: ${{ secrets.REPORT_TO }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+        run: |
+          sources=email
+          if [ -n "$ADZUNA_APP_ID" ]; then sources="$sources,adzuna"; fi
+          status=0
+          python -m job_hunter run --sources "$sources" --max-analyses "$MAX_ANALYSES" \
+            --email-report --log-file "$RUNNER_TEMP/run.log" > "$RUNNER_TEMP/out.txt" 2>&1 \
+            || status=$?
+          # Public output: counts and failed source names only.
+          grep -E '^(Collected|Analysed|Report emailed)' "$RUNNER_TEMP/out.txt" | sed 's/^/  /' \
+            | tee -a "$GITHUB_STEP_SUMMARY" || true
+          grep -E '^  ! ' "$RUNNER_TEMP/out.txt" | sed -E 's/^  ! ([a-z_]+).*/  ! \1 failed (details in the emailed log)/' || true
+          if [ "$status" -ne 0 ]; then
+            echo "Run ended with code $status. 3 = email not sent (check IMAP_USER / IMAP_PASSWORD)."
+            exit "$status"
+          fi
