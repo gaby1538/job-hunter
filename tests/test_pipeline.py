@@ -28,10 +28,18 @@ def test_end_to_end_from_eml(config: AppConfig, settings: Settings, emails_dir: 
 
     titles = sorted(j.title for j in result.kept)
     assert "Market Risk Quant Analyst" in titles           # gender tag cleaned
+    assert "Analyste quantitatif - Risques de crédit" in titles
+    assert "Quant Risk Analyst - XVA" in titles
+    assert "Consultant Risque de Marché" in titles         # Malt
     assert "Stage Risque de Marché" not in titles          # excluded keyword
-    assert "Comptable fournisseurs" not in titles          # no include keyword
+    reasons = {r.job.title: r.reason for r in result.rejected}
+    assert reasons["Chef de projet Power BI"] == "no include keyword found"
+    assert "excluded keyword 'stage'" in reasons["Stage - 6 mois - Analyste Investissement"]
     assert result.errors == {"broken": "API down"}         # other sources still ran
-    assert result.per_source["efinancialcareers"] == 3
+    assert result.per_source == {
+        "efinancialcareers": 3, "free_work": 2, "hellowork": 4,
+        "indeed": 2, "linkedin": 2, "malt": 1,
+    }
 
     run_dir = export(result, tmp_path)
     assert run_dir.name == "2026-11-08_193000"             # folder named in Paris time
@@ -53,4 +61,4 @@ def test_cli_extract_and_parse_eml(emails_dir: Path, tmp_path: Path, capsys) -> 
 
     main(["--config", str(ROOT / "config"), "parse-eml", str(emails_dir / "indeed_alert.eml")])
     out = capsys.readouterr().out
-    assert "Site: indeed" in out and "Jobs found: 3" in out
+    assert "Site: indeed" in out and "Jobs found: 2" in out and "may be the site's own estimate" in out

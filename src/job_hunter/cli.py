@@ -61,10 +61,22 @@ def cmd_parse_eml(args: argparse.Namespace) -> int:
         print(f"   Site: {site[0]}  Jobs found: {len(jobs)}")
         for job in jobs:
             print(f"   - {job.title}")
-            print(f"     url: {job.url}")
-            if job.source_job_id:
-                print(f"     id: {job.source_job_id}")
-            print(f"     context lines: {job.raw.get('context')}")
+            shown = {
+                "url": job.url, "id": job.source_job_id, "company": job.company,
+                "location": job.location, "contract": job.contract_type.value,
+                "salary": job.salary_text, "remote": job.remote_text,
+                "published": job.published_at.isoformat() if job.published_at else None,
+            }
+            for key, value in shown.items():
+                if value and value != "unknown":
+                    print(f"     {key}: {value}")
+            if job.salary_may_be_estimate:
+                print("     (salary may be the site's own estimate)")
+            for key, value in job.raw.get("details", {}).items():
+                if key != "contract":
+                    print(f"     {key}: {value[:80]}")
+            if job.raw.get("context"):
+                print(f"     other lines: {job.raw['context']}")
     return 0
 
 

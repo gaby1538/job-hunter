@@ -7,8 +7,7 @@
 #   - RSS feeds published by the site
 # No scraping of job sites.
 #
-# NOTE: the email URL patterns below are first guesses. Validate each one
-# against a real alert email with:  python -m job_hunter parse-eml <file.eml>
+# Check a rule on a real email with:  python -m job_hunter parse-eml <file.eml>
 # ---------------------------------------------------------------------------
 
 email:
@@ -20,73 +19,138 @@ email:
   ignore_link_texts:
     - unsubscribe
     - désabonner
-    - se désinscrire
+    - désinscrire
     - voir toutes
-    - voir plus
     - see all
+    - see matching
     - view all
-    - more jobs
-    - manage
     - gérer
+    - manage
     - paramètres
     - settings
-    - privacy
     - confidentialité
-    - help
-    - aide
-    - download
-    - télécharger
-    - app store
-    - google play
+    - privacy
 
-  # One entry per job site. A message is assigned to the first site whose
-  # sender_patterns match the From header.
-  #   job_url_patterns : regex; a link is a job only if its URL matches one
-  #   job_id_pattern   : optional regex with one group extracting the site's job id
-  #   context_fields   : names given, in order, to the text lines that follow
-  #                      the title inside the job block (e.g. [company, location]).
-  #                      Leave empty until checked against a real email.
+  # ------------------------------------------------------------------------
+  # One entry per job site. Keys:
+  #   sender_patterns   : substrings of the From address (only alert senders!)
+  #   subject_patterns  : optional regex the subject must match
+  #   mode              : links (digest of several jobs) | single (one offer per email)
+  #   body              : text | html - which part of the email to read
+  #   job_url_patterns  : regex - a link is a job if its (decoded) URL matches
+  #   job_id_pattern    : regex with one group: the site's job id
+  #   canonical_url     : stable URL built from the id, e.g. https://site/jobs/{id}
+  #   unwrap_redirects  : decode click-tracking redirects to the real job URL
+  #   title_first       : true = first line of the block is the title
+  #   skip_line_patterns: lines to drop (buttons, badges, headers)
+  #   line_patterns     : regex with named groups -> fields. Recognised names:
+  #                       company, location, salary_text, remote_text, contract,
+  #                       posted_text ("il y a 3 jours" -> publication date);
+  #                       any other name is kept in raw details.
+  #   context_fields    : names for the leftover lines, in order
+  #   default_contract  : contract implied by the site itself (e.g. Malt = freelance)
+  #   salary_may_be_estimate: the site says it estimates missing salaries
+  # ------------------------------------------------------------------------
   sites:
+
+    # Verified on real alerts (Nov 2026): text part, details ABOVE the link.
+    indeed:
+      sender_patterns: ["jobalert.indeed.com"]
+      body: text
+      job_url_patterns: ['indeed\.[a-z.]+/(rc/clk|pagead/clk|viewjob|m/viewjob)']
+      job_id_pattern: '[?&]jk=([0-9a-f]+)'
+      canonical_url: "https://fr.indeed.com/viewjob?jk={id}"
+      title_first: true
+      skip_line_patterns: ['^Indeed Job Alert$', 'nouveaux? emplois', '^Jobs \d+-\d+ of']
+      line_patterns:
+        - '^(?P<company>.+?) - (?P<location>[^-]+)$'
+        - '^(?P<salary_text>(De |Jusqu|À partir|A partir|\d).*€.*)$'
+        - '^(?P<posted_text>il y a .+|Publiée .+|Aujourd.hui|Just posted|\d+\+? (jours?|days?) ago)$'
+      salary_may_be_estimate: true   # Indeed's footer says missing salaries are estimated
+
+    # Verified on real alerts (Nov 2026): text part, blocks separated by dashes.
+    linkedin:
+      sender_patterns: ["jobalerts-noreply@linkedin.com"]
+      body: text
+      job_url_patterns: ['linkedin\.com/(comm/)?jobs/view/\d+']
+      job_id_pattern: 'jobs/view/(\d+)'
+      canonical_url: "https://www.linkedin.com/jobs/view/{id}"
+      title_first: true
+      skip_line_patterns:
+        - '^Votre alerte Emploi'
+        - '^Your job alert'
+        - '^Cette entreprise recrute'
+        - '^Postulez avec'
+        - '^Candidature simplifiée'
+        - "^Voir l.offre"
+        - '^-{5,}$'
+      context_fields: [company, location]
+
+    # Verified on real alerts (Nov 2026): HTML part, tracking redirects with the
+    # real URL base64-encoded inside; details BELOW the title.
+    hellowork:
+      sender_patterns: ["notification@emails.hellowork.com"]
+      body: html
+      unwrap_redirects: true
+      job_url_patterns: ['hellowork\.com/[a-z-]+/emplois/\d+']
+      job_id_pattern: 'emplois/(\d+)'
+      canonical_url: "https://www.hellowork.com/fr-fr/emplois/{id}.html"
+      title_first: false
+      skip_line_patterns: ['^Super recruteur$', "^Voir l.offre$", '^\|$']
+      line_patterns:
+        - '^(?P<contract>CDI|CDD|Freelance|Intérim|Interim|Stage|Alternance|Indépendant|Saisonnier)$'
+        - '^(?P<salary_text>[\d  ]+.*€.*)$'
+        - '^(?P<location>.+ - (\d{2,3}|2A|2B))$'
+      context_fields: [company]
+
+    # Verified on real newsletters (Nov 2026): text part, contract line BEFORE the title.
+    free_work:
+      sender_patterns: ["@free-work.com"]
+      body: text
+      job_url_patterns: ['free-work\.com/[a-z-]+/[a-z-]+/job-mission/']
+      title_first: false
+      skip_line_patterns: ['^Postuler$', '^<<.*>>$']
+      line_patterns:
+        - '^(?P<contract>Freelance|CDI|CDD|Stage|Alternance)$'
+        - '^💶\s*(?P<salary_text>.+)$'
+        - '^📍\s*(?P<location>.+)$'
+
+    # Verified on real emails (Oct 2026): one client offer per email.
+    malt:
+      sender_patterns: ["noreply@malt.com"]
+      subject_patterns: ['opportunit']
+      mode: single
+      job_url_patterns: ['malt\.[a-z]+/messages/client-project-offer/']
+      job_id_pattern: 'client-project-offer/([0-9a-f]+)'
+      canonical_url: "https://www.malt.fr/messages/client-project-offer/{id}"
+      title_selector: "p.opportunity-name"
+      subject_fields: 'avec (?P<company>.+)$'
+      labels:
+        Lieu: location
+        Télétravail: remote_text
+        Tarif journalier initial: salary_text
+        Durée: duration
+        Début: start
+        Nombre de jours de travail: workload
+        Description: description
+      default_contract: freelance   # Malt only carries freelance missions
+
+    # ---- Not yet verified: no alert from these sites in your inbox yet. ----
     efinancialcareers:
       sender_patterns: ["efinancialcareers"]
+      subject_patterns: ['job|emploi|offre']
       job_url_patterns: ['efinancialcareers\.[a-z.]+/jobs-']
       job_id_pattern: 'id(\d{6,})'
-      context_fields: []
-    indeed:
-      sender_patterns: ["indeed"]
-      job_url_patterns: ['indeed\.[a-z.]+/(rc/clk|viewjob|pagead/clk|m/viewjob)']
-      job_id_pattern: '[?&]jk=([0-9a-f]+)'
-      context_fields: []
+    apec:
+      sender_patterns: ["apec.fr"]
+      job_url_patterns: ['apec\.fr/.*(detail-offre|offre)']
     monster:
       sender_patterns: ["monster"]
       job_url_patterns: ['monster\.[a-z.]+/(emploi|job|offre)']
-      context_fields: []
-    malt:
-      sender_patterns: ["malt"]
-      job_url_patterns: ['malt\.[a-z.]+/.*(project|mission|opportunit)']
-      context_fields: []
-    hellowork:
-      sender_patterns: ["hellowork"]
-      job_url_patterns: ['hellowork\.com/[a-z-]+/emplois/']
-      job_id_pattern: 'emplois/(\d+)'
-      context_fields: []
-    apec:
-      sender_patterns: ["apec"]
-      job_url_patterns: ['apec\.fr/.*(detail-offre|offre)']
-      context_fields: []
-    linkedin:
-      sender_patterns: ["linkedin"]
-      job_url_patterns: ['linkedin\.com/(comm/)?jobs/view/']
-      job_id_pattern: 'jobs/view/(\d+)'
-      context_fields: []
-    free_work:
-      sender_patterns: ["free-work", "freework"]
-      job_url_patterns: ['free-work\.com/.*/job-mission/']
-      context_fields: []
     welcome_to_the_jungle:
-      sender_patterns: ["welcometothejungle", "wttj"]
+      sender_patterns: ["welcometothejungle.com"]
+      subject_patterns: ['offre|job|poste']
       job_url_patterns: ['welcometothejungle\.com/.*/jobs/']
-      context_fields: []
 
 adzuna:
   enabled: true

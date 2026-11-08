@@ -6,15 +6,17 @@ Every criterion and every site rule is a YAML parameter: no code change needed.
 
 ## Where the jobs come from
 
-| Channel | Sites | How |
+| Channel | Sites | Status |
 |---|---|---|
-| Email alerts | eFinancialCareers, Indeed, Monster, Malt, HelloWork, APEC, LinkedIn, Free-Work, Welcome to the Jungle (+ any site you add) | Alerts you subscribe to, read from a dedicated inbox via IMAP (read-only) |
+| Email alerts | **Indeed, LinkedIn, HelloWork, Free-Work, Malt** | Rules built from real alerts (Nov 2026) |
+| Email alerts | eFinancialCareers, APEC, Monster, Welcome to the Jungle | Rules ready but unverified: subscribe to their job alerts, then check with `parse-eml` |
 | Adzuna API | Aggregates many French boards | Official API, free self-serve key |
 | France Travail API | France Travail | Official API, **off by default** (new access requests currently paused) |
 | RSS | Any board publishing a feed | Feed URLs in `sources.yaml` |
 
 No site is scraped. Indeed retired its public API and forbids scraping; the
 other boards have no public job API, so their **email alerts** are the route.
+Alerts are read from your inbox in read-only mode.
 
 ## Project layout
 
@@ -37,24 +39,43 @@ src/job_hunter/
     dedupe.py        # same title+company+city or same URL -> one job, other URLs kept
   pipeline.py        # runs sources (one failing source doesn't stop the run) + export
   cli.py             # command line
-tests/               # 24 tests, synthetic sample emails + mocked API responses
+tests/               # 36 tests: anonymized real-layout alerts + mocked API responses
 ```
 
 ## How the email parser works
 
-1. The sender (`From`) picks the site, using `sender_patterns`.
-2. Every link whose URL matches the site's `job_url_patterns` is a job; its link text is the title.
-3. Links like "Unsubscribe" or "See all" are ignored (`ignore_link_texts`).
-4. The text lines next to the link (company, city, salary...) are stored as `context`.
-   They become fields only if you set `context_fields`, e.g. `[company, location]`,
-   once you've checked a real email. Until then nothing is guessed.
+Each site has a rule in `sources.yaml`; no site-specific code.
 
-The URL patterns in `sources.yaml` are first guesses. To check one site, save one of its
-alert emails as `.eml` (Gmail: ⋮ > Download message) and run:
+1. **Which emails**: the sender address (`sender_patterns`) and optionally the subject.
+   Only alert senders are listed, so recruiter messages and newsletters are ignored.
+2. **Which jobs**: every link whose URL matches `job_url_patterns`. Click-tracking
+   redirects (HelloWork) are decoded to the real job URL (`unwrap_redirects`).
+3. **Which lines belong to a job**: in text alerts (Indeed, LinkedIn, Free-Work) the
+   details sit above the job link; in HTML alerts (HelloWork) below the title.
+4. **Fields**: `line_patterns` (regex with named groups) turn lines into company,
+   location, salary, contract, remote policy or "posted 3 days ago". Lines no pattern
+   recognises are kept as raw context, never guessed into a field.
+5. **Single-offer emails** (Malt): title from a CSS selector, company from the subject,
+   and labelled values (Lieu, Télétravail, Tarif journalier...).
+6. **Stable URLs**: when a job id is found, the URL is rebuilt from it
+   (`canonical_url`), so the same job always gets the same link.
+
+What is deliberately *not* invented:
+- Indeed estimates salaries that ads don't state; its salaries are flagged
+  `salary_may_be_estimate`.
+- A contract implied by the site (Malt = freelance) is marked `contract_source: site default`.
+- "il y a 10 jours" becomes a publication date only relative to the email's own date.
+
+**Privacy**: tracking links can embed your email address and personal tokens. They are
+never stored; only the cleaned job URL is kept. Test fixtures are anonymized.
+
+To check a rule on a real email, save it as `.eml` (Gmail: ⋮ > Download message) and run:
 
 ```bash
 python -m job_hunter parse-eml path/to/alert.eml
 ```
+
+To change the sample emails, edit and run `tests/fixtures/make_fixtures.py`.
 
 ## Run it
 

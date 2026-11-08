@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 TRACKING_PARAMS = {
     "fbclid", "gclid", "mc_cid", "mc_eid", "trk", "trkemail", "refid", "trackingid",
     "lipi", "midtoken", "midsig", "eid", "otptoken", "ssid", "src", "source", "from",
-    "alid", "tk", "sid",
+    "alid", "tk", "sid", "tmtk", "qd", "rd", "bb", "camk", "xkcb", "jsa", "plid",
 }
 _GENDER_TAGS = re.compile(r"\(?\b[hfm]\s*/\s*[hfm](\s*/\s*[a-z])?\b\)?", re.IGNORECASE)
 _NON_WORD = re.compile(r"[^a-z0-9]+")
@@ -56,6 +56,24 @@ def norm_text(value: str | None) -> str:
 def clean_title(title: str) -> str:
     title = _GENDER_TAGS.sub(" ", title)
     return " ".join(title.split()).strip(" -|,")
+
+
+_CONTRACT_WORDS = {
+    "cdi": ContractType.PERMANENT,
+    "permanent": ContractType.PERMANENT,
+    "cdd": ContractType.FIXED_TERM,
+    "freelance": ContractType.FREELANCE,
+    "independant": ContractType.FREELANCE,
+    "portage salarial": ContractType.FREELANCE,
+    "stage": ContractType.INTERNSHIP,
+    "alternance": ContractType.INTERNSHIP,
+    "internship": ContractType.INTERNSHIP,
+}
+
+
+def contract_from_text(text: str) -> ContractType:
+    """Map a contract label written by a site (e.g. 'CDI', 'Freelance') to a ContractType."""
+    return _CONTRACT_WORDS.get(norm_text(text), ContractType.UNKNOWN)
 
 
 def detect_contract_in_title(title: str) -> ContractType:

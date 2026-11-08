@@ -51,6 +51,10 @@ class JobPosting(BaseModel):
     salary_currency: str | None = None
     salary_period: SalaryPeriod | None = None
     salary_text: str | None = Field(default=None, description="Salary as written by the source")
+    salary_may_be_estimate: bool = Field(
+        default=False, description="Source says its salaries can be its own estimates"
+    )
+    remote_text: str | None = Field(default=None, description="Remote policy as written")
     published_at: datetime | None = None
     collected_at: datetime = Field(default_factory=utc_now)
     also_seen_at: list[str] = Field(default_factory=list, description="Other URLs of duplicates")

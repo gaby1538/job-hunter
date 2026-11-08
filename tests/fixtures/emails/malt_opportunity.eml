@@ -1,0 +1,34 @@
+From: "Malt [no reply]" <noreply@malt.com>
+To: me@example.com
+Subject: Nouvelle =?utf-8?q?opportunit=C3=A9?= avec CLIENT EXEMPLE
+Date: Tue, 27 Oct 2026 07:13:59 +0000
+Message-ID: <malt_opportunity@example.com>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+MIME-Version: 1.0
+
+<html><head><style>.heading { font-size: 32px; }</style></head><body>
+<p class="heading">Bonne nouvelle,<br/>cette opportunité correspond à votre profil !</p>
+<table class="main-table"><tbody><tr><td align="center" class="section">
+  <img class="company-frame" src="https://attachements.malt.com/company-placeholder-22.png">
+  <p class="section-name">CLIENT EXEMPLE</p>
+  <p class="opportunity-name">Consultant Risque de Marché </p>
+</td></tr>
+<tr><td><div class="details-table"><div class="section">
+  <p class="section-name">Description</p>
+  <p class="section-details"><strong>&Agrave; propos du projet</strong> Notre client, une banque, renforce son &eacute;quipe risques de march&eacute; (VaR, Expected Shortfall).</p>
+</div></div></td></tr></tbody></table>
+<table class="buttons-section"><tbody><tr>
+  <td><!--[if gte mso 9]><table><tr><th><![endif]-->
+  <a href="https://www.malt.fr/messages/client-project-offer/6ad09891403102c7db82a9b8?utm_source&#x3D;mandrill&amp;utm_medium&#x3D;email" title="Répondre au client"><span>Répondre au client</span></a></td>
+  <td><a href="https://www.malt.fr/client/sourcing-projects/freelancer-project-decline/6ad09891403102c7db82a9b8?token&#x3D;TOKEN" title="Décliner"><span>Décliner</span></a></td>
+</tr></tbody></table>
+<table class="main-table"><tbody>
+<tr><td class="section col2"><p class="section-name">Nombre de jours de travail</p><p class="section-details">Toute la semaine</p></td>
+    <td class="section col2"><p class="section-name">Début</p><p class="section-details">Dès que possible</p></td></tr>
+<tr><td class="section col2"><p class="section-name">Télétravail</p><p class="section-details">Oui (2 jours/semaine)</p></td>
+    <td class="section col2"><p class="section-name">Durée</p><p class="section-details">6 mois</p></td></tr>
+<tr><td class="section col2"><p class="section-name">Lieu</p><p class="section-details">Paris, France</p></td>
+    <td class="section col2"><p class="section-name">Tarif journalier initial</p><p class="section-details">Selon profil</p></td></tr>
+</tbody></table>
+</body></html>

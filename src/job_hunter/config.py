@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -45,19 +45,48 @@ def _check_regexes(patterns: list[str]) -> list[str]:
 
 
 class EmailSiteRule(BaseModel):
+    """How to read one site's alert emails. See sources.yaml for documented examples."""
+
+    # Which emails belong to this site
     sender_patterns: list[str] = Field(min_length=1)
+    subject_patterns: list[str] = Field(default_factory=list)
+
+    # links: one job per job link (digests). single: the whole email is one job.
+    mode: Literal["links", "single"] = "links"
+    # Which part of the email to read: the text part or the HTML part.
+    body: Literal["text", "html"] = "html"
+
+    # Links
     job_url_patterns: list[str] = Field(min_length=1)
     job_id_pattern: str | None = None
-    context_fields: list[str] = Field(default_factory=list)
+    canonical_url: str | None = None  # template with {id}, e.g. https://x/jobs/{id}
+    unwrap_redirects: bool = False  # decode click-tracking redirects to the real URL
 
-    @field_validator("job_url_patterns")
+    # Reading the lines of a job block
+    title_first: bool = True  # False: the title is the first line no pattern claims
+    skip_line_patterns: list[str] = Field(default_factory=list)
+    line_patterns: list[str] = Field(default_factory=list)  # regex with named groups
+    context_fields: list[str] = Field(default_factory=list)  # leftover lines, in order
+    max_context_lines: int = Field(default=8, ge=1)
+
+    # single mode (one offer per email)
+    title_selector: str | None = None  # CSS selector
+    subject_fields: str | None = None  # regex with named groups applied to the subject
+    labels: dict[str, str] = Field(default_factory=dict)  # "Lieu": location
+
+    # Facts about the channel itself
+    default_contract: ContractType | None = None
+    salary_may_be_estimate: bool = False
+
+    @field_validator("subject_patterns", "job_url_patterns",
+                     "skip_line_patterns", "line_patterns")
     @classmethod
     def _valid(cls, v: list[str]) -> list[str]:
         return _check_regexes(v)
 
-    @field_validator("job_id_pattern")
+    @field_validator("job_id_pattern", "subject_fields")
     @classmethod
-    def _valid_id(cls, v: str | None) -> str | None:
+    def _valid_one(cls, v: str | None) -> str | None:
         if v is not None:
             _check_regexes([v])
         return v
