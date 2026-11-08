@@ -42,7 +42,7 @@ jobs:
     env:
       MODE: ${{ inputs.mode }}
       MAX_ANALYSES: ${{ inputs.max_analyses }}
-      JOB_HUNTER_DATA_DIR: ${{ runner.temp }}/data
+      JOB_HUNTER_DATA_DIR: data   # inside the throwaway runner; never uploaded
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
