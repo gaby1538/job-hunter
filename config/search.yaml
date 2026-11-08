@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------------------
+# Search criteria. Everything here is a parameter: edit freely, no code change.
+# Values below are placeholders - set your real criteria later.
+# ---------------------------------------------------------------------------
+
+# Phrases sent as queries to APIs (Adzuna, France Travail, ...).
+# One API query is made per phrase.
+queries:
+  - "market risk"
+  - "quantitative risk"
+  - "counterparty risk"
+  - "liquidity risk"
+  - "risk modelling"
+  - "XVA"
+
+# Where to search (API sources). Empty "where" = whole country.
+country: "fr"
+locations:
+  - where: ""
+
+# Keep a job only if its title or text contains at least one of these
+# (case-insensitive). Empty list = keep everything.
+include_keywords:
+  - risk
+  - risque
+  - quant
+  - xva
+  - var
+  - modelling
+  - modélisation
+
+# Drop a job if its TITLE contains any of these (case-insensitive).
+exclude_title_keywords:
+  - stage
+  - stagiaire
+  - internship
+  - alternance
+  - apprenti
+
+# Allowed contract types: permanent, freelance, fixed_term, internship, unknown.
+# Jobs whose contract type is unknown are kept when "unknown" is listed.
+contract_types: [permanent, freelance, unknown]
+
+# Drop jobs published more than N days ago (only when the date is known).
+max_age_days: 14
+
+# Safety cap per source per run.
+max_results_per_source: 300

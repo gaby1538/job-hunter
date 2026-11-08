@@ -1,0 +1,109 @@
+# ---------------------------------------------------------------------------
+# Source definitions. Turn sources on/off and tune parsing rules here.
+#
+# Only authorized channels are used:
+#   - email alerts you subscribed to (received in your own inbox)
+#   - official APIs (Adzuna, France Travail)
+#   - RSS feeds published by the site
+# No scraping of job sites.
+#
+# NOTE: the email URL patterns below are first guesses. Validate each one
+# against a real alert email with:  python -m job_hunter parse-eml <file.eml>
+# ---------------------------------------------------------------------------
+
+email:
+  enabled: true
+  mailbox: "INBOX"
+  lookback_days: 2
+
+  # Link texts that are never job titles (case-insensitive substring match).
+  ignore_link_texts:
+    - unsubscribe
+    - désabonner
+    - se désinscrire
+    - voir toutes
+    - voir plus
+    - see all
+    - view all
+    - more jobs
+    - manage
+    - gérer
+    - paramètres
+    - settings
+    - privacy
+    - confidentialité
+    - help
+    - aide
+    - download
+    - télécharger
+    - app store
+    - google play
+
+  # One entry per job site. A message is assigned to the first site whose
+  # sender_patterns match the From header.
+  #   job_url_patterns : regex; a link is a job only if its URL matches one
+  #   job_id_pattern   : optional regex with one group extracting the site's job id
+  #   context_fields   : names given, in order, to the text lines that follow
+  #                      the title inside the job block (e.g. [company, location]).
+  #                      Leave empty until checked against a real email.
+  sites:
+    efinancialcareers:
+      sender_patterns: ["efinancialcareers"]
+      job_url_patterns: ['efinancialcareers\.[a-z.]+/jobs-']
+      job_id_pattern: 'id(\d{6,})'
+      context_fields: []
+    indeed:
+      sender_patterns: ["indeed"]
+      job_url_patterns: ['indeed\.[a-z.]+/(rc/clk|viewjob|pagead/clk|m/viewjob)']
+      job_id_pattern: '[?&]jk=([0-9a-f]+)'
+      context_fields: []
+    monster:
+      sender_patterns: ["monster"]
+      job_url_patterns: ['monster\.[a-z.]+/(emploi|job|offre)']
+      context_fields: []
+    malt:
+      sender_patterns: ["malt"]
+      job_url_patterns: ['malt\.[a-z.]+/.*(project|mission|opportunit)']
+      context_fields: []
+    hellowork:
+      sender_patterns: ["hellowork"]
+      job_url_patterns: ['hellowork\.com/[a-z-]+/emplois/']
+      job_id_pattern: 'emplois/(\d+)'
+      context_fields: []
+    apec:
+      sender_patterns: ["apec"]
+      job_url_patterns: ['apec\.fr/.*(detail-offre|offre)']
+      context_fields: []
+    linkedin:
+      sender_patterns: ["linkedin"]
+      job_url_patterns: ['linkedin\.com/(comm/)?jobs/view/']
+      job_id_pattern: 'jobs/view/(\d+)'
+      context_fields: []
+    free_work:
+      sender_patterns: ["free-work", "freework"]
+      job_url_patterns: ['free-work\.com/.*/job-mission/']
+      context_fields: []
+    welcome_to_the_jungle:
+      sender_patterns: ["welcometothejungle", "wttj"]
+      job_url_patterns: ['welcometothejungle\.com/.*/jobs/']
+      context_fields: []
+
+adzuna:
+  enabled: true
+  base_url: "https://api.adzuna.com/v1/api/jobs"
+  results_per_page: 50
+  max_pages: 2
+
+france_travail:
+  # Off until you have API credentials.
+  enabled: false
+  token_url: "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire"
+  search_url: "https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search"
+  scope: "api_offresdemploiv2 o2dsoffre"
+  page_size: 150
+
+rss:
+  enabled: false
+  feeds: []
+  # - name: example_board
+  #   url: "https://example.com/jobs.rss"

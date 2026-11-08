@@ -1,0 +1,9 @@
+From: Some Newsletter <news@example.org>
+To: me@example.com
+Subject: Weekly news
+Date: Sat, 07 Nov 2026 09:00:00 +0000
+Message-ID: <sample-news-1@example.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+
+<html><body><a href="https://example.org/article">Read our article on market risk</a></body></html>
